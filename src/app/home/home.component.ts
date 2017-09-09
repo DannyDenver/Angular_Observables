@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit,OnDestroy } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
+import { Subscription } from 'rxjs/Subscription';
 import 'rxjs/Rx';
 
 @Component({
@@ -8,17 +9,19 @@ import 'rxjs/Rx';
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
+  numbersObsSubscription: Subscription;
+  customObsSubscription: Subscription;
 
   constructor() { }
 
   ngOnInit() {
-    // const myNumber = Observable.interval(1000);   /// creating new observable, wait every second
-    // myNumber.subscribe( 
-    //   (number: number) => {
-    //     console.log(number);
-    //   } 
-    // )
+    const myNumber = Observable.interval(1000);   /// creating new observable, wait every second
+    this.numbersObsSubscription = myNumber.subscribe( 
+      (number: number) => {
+        console.log(number); // memory leak 
+      } 
+    ); 
       const myObservable = Observable.create((observer: Observer<string>) => {
         setTimeout(() => {
           observer.next('first package')}, //pushes next data package
@@ -34,11 +37,16 @@ export class HomeComponent implements OnInit {
           observer.next('third package')}, 
           6000);
       }); 
-      myObservable.subscribe(
+      this.customObsSubscription = myObservable.subscribe(
       (data: string) => {console.log(data)},
       (error: string) => {console.log(error)},
       () => { console.log('completed'); }
     )
+  }
+
+  ngOnDestroy(){
+      this.numbersObsSubscription.unsubscribe(); // prevents memory leak 
+      this.customObsSubscription.unsubscribe(); 
   }
 
 }
